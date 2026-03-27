@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -7,18 +7,44 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-
-    if (!savedUser) {
-      alert("Please signup first");
+    if (!email || !password) {
+      alert("Enter email and password");
       return;
     }
 
-    if (email === savedUser.email && password === savedUser.password) {
-      navigate("/subscription");
-    } else {
+    const normalizedEmail = email.trim().toLowerCase();
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const existingUser = users[normalizedEmail];
+
+    if (existingUser && existingUser.password !== password) {
       alert("Invalid email or password");
+      return;
     }
+
+    if (!existingUser) {
+      users[normalizedEmail] = { email: normalizedEmail, password };
+      localStorage.setItem("users", JSON.stringify(users));
+    }
+
+    localStorage.setItem("currentUserEmail", normalizedEmail);
+
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    if (!userData[normalizedEmail]) {
+      userData[normalizedEmail] = {
+        subscribed: false,
+        plan: "",
+        charity: "",
+        scores: [],
+      };
+      localStorage.setItem("userData", JSON.stringify(userData));
+    }
+
+    if (userData[normalizedEmail].subscribed) {
+      navigate("/dashboard");
+      return;
+    }
+
+    navigate("/subscription");
   };
 
   return (
@@ -45,12 +71,6 @@ export default function Login() {
         <button onClick={handleLogin} style={button}>
           Login
         </button>
-
-        <p>
-          <Link to="/signup" style={link}>
-            Create Account
-          </Link>
-        </p>
       </div>
     </div>
   );
@@ -90,9 +110,4 @@ const button = {
   borderRadius: "6px",
   cursor: "pointer",
   fontWeight: "bold",
-};
-
-const link = {
-  color: "#667eea",
-  textDecoration: "none",
 };

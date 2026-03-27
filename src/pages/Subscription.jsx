@@ -4,17 +4,30 @@ export default function Subscription() {
   const navigate = useNavigate();
 
   const subscribe = (plan) => {
-    // ✅ Save data
-    localStorage.setItem("plan", plan);
-    localStorage.setItem("subscribed", "true");
+    const currentUserEmail = localStorage.getItem("currentUserEmail");
+    if (!currentUserEmail) {
+      navigate("/");
+      return;
+    }
 
-    // ❌ REMOVE alert (it delays navigation)
-    // alert(`Subscribed to ${plan} plan`);
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    const currentUserData = userData[currentUserEmail] || {
+      subscribed: false,
+      plan: "",
+      charity: "",
+      scores: [],
+    };
 
-    // ✅ Navigate
+    userData[currentUserEmail] = {
+      ...currentUserData,
+      plan,
+      subscribed: true,
+    };
+
+    localStorage.setItem("userData", JSON.stringify(userData));
+
     navigate("/dashboard");
 
-    // ✅ Force refresh so App.jsx re-checks localStorage
     setTimeout(() => {
       window.location.reload();
     }, 100);

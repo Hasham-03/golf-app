@@ -6,15 +6,27 @@ export default function Dashboard() {
   const [scores, setScores] = useState([]);
   const [charity, setCharity] = useState("");
   const [plan, setPlan] = useState("");
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
 
   useEffect(() => {
-    const savedScores = JSON.parse(localStorage.getItem("scores")) || [];
-    const savedCharity = localStorage.getItem("charity") || "";
-    const savedPlan = localStorage.getItem("plan") || "";
+    const activeEmail = localStorage.getItem("currentUserEmail") || "";
+    if (!activeEmail) {
+      window.location.href = "/";
+      return;
+    }
 
-    setScores(savedScores);
-    setCharity(savedCharity);
-    setPlan(savedPlan);
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    const savedUserData = userData[activeEmail] || {
+      subscribed: false,
+      plan: "",
+      charity: "",
+      scores: [],
+    };
+
+    setCurrentUserEmail(activeEmail);
+    setScores(savedUserData.scores || []);
+    setCharity(savedUserData.charity || "");
+    setPlan(savedUserData.plan || "");
   }, []);
 
   const addScore = () => {
@@ -44,8 +56,22 @@ export default function Dashboard() {
 
     updated.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    localStorage.setItem("scores", JSON.stringify(updated));
-    localStorage.setItem("charity", charity);
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    const currentUserData = userData[currentUserEmail] || {
+      subscribed: false,
+      plan: "",
+      charity: "",
+      scores: [],
+    };
+
+    userData[currentUserEmail] = {
+      ...currentUserData,
+      plan: currentUserData.plan || plan,
+      charity,
+      scores: updated,
+    };
+
+    localStorage.setItem("userData", JSON.stringify(userData));
 
     setScores(updated);
     setScore("");
@@ -53,7 +79,7 @@ export default function Dashboard() {
   };
 
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem("currentUserEmail");
     window.location.href = "/";
   };
 
